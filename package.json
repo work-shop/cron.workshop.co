@@ -1,0 +1,33 @@
+{
+  "name": "cron.workshop.co",
+  "version": "1.0.0",
+  "description": "A small tool for scheduling and processing actions to and from Work-Shop's Paymo instance.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/work-shop/cron.workshop.co.git"
+  },
+  "keywords": [
+    "scheduling",
+    "paymo",
+    "project-management",
+    "time-management"
+  ],
+  "author": "nicschumann",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/work-shop/cron.workshop.co/issues"
+  },
+  "homepage": "https://github.com/work-shop/cron.workshop.co#readme",
+  "dependencies": {
+    "async": "^2.6.0",
+    "base-64": "^0.1.0",
+    "email": "^0.2.6",
+    "node-schedule": "^1.3.0",
+    "request-promise": "^4.2.2"
+  },
+  "paymo_url": "https://app.paymoapp.com/api/"
+}
