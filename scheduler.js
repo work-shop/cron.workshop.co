@@ -1,72 +1,131 @@
 "use strict";
 
 var async = require('async');
-var schedule = require('node-schedule');
+var scheduler = require('node-schedule');
 var Paymo = require('./paymo.js');
 
-module.exports = function Scheduler( key, config ) {
+/**
+ * cronRule determines a typical cron string from the human-legible schedule object field
+ * provided with each task.
+ *
+ * @param rule a potentially undefined cron rule to define a canonical string for.
+ */
+function cronRule( rule ) { return ( typeof rule === "undefined" ) ? "*" : rule; }
+
+/**
+ * cronRuleFromSchedule builds a cron string for the set of available cron schedule items.
+ *
+ * @param schedule object, an object
+ */
+function cronRuleFromSchedule( schedule ) {
+    return [ schedule.second, schedule.minute, schedule.hour, schedule.dayOfMonth, schedule.month, schedule.dayOfWeek ].map( cronRule ).join(' ');
+}
+
+/**
+ * It's possible to pass a function as the value of the name or description field. In this case,
+ * This function will be called with the resolved information from the Paymo API, and should return a
+ * string containing the name or description, respectively.
+ */
+function buildParametricTaskValues( taskfield, project, tasklist, users ) {
+    return ( typeof taskfield === "function" ) ? taskfield( project, tasklist, users ) : function() { return taskfield; };
+}
+
+
+
+
+function Scheduler( key, config ) {
     if ( !(this instanceof Scheduler)) { return new Scheduler(); }
     var self = this;
 
-    var paymo = new Paymo( key, config );
+    self.paymo = new Paymo( key, config );
 
-    self.scheduleTask = function( task ) {
+}
 
-        async.parallel({
-                users: function( done ) {
-                    paymo   .get( "users" )
-                            .then( function( d ) { done( null, d.users.filter( function( user ) { return task.users.indexOf( user.name ) !== -1 || task.users.indexOf( user.email ) !== -1; } ) ); } )
-                            .catch( done );
-                },
-                tasklist: function( done ) {
-                    paymo   .get( "projects" )
-                            .then( function( d ) {
+/**
+ * This routine takes a specific task object with sane project, tasklist, and user names,
+ * retrieves the required ID information from the Paymo API, and posts the new task, with
+ * the specified data to the API.
+ *
+ * @param task a task object as specified in the tasks.js list
+ * @param callback a function consuming (err, result) containing the next step of computation.
+ *
+ */
+Scheduler.prototype.postTask = function( task, callback ) {
 
-                                var project = d.projects.filter( function ( project ) { return project.name.toLowerCase() === task.project.toLowerCase() || project.code === task.project_name; } );
-                                if ( project.length > 1 ) { done( new Error("Error: Project Name \"" + task.project + "\" did not select a unique project." ) ); }
-                                if ( project.length < 1 ) { done( new Error("Error: Project \"" + task.project + "\" doesn't exist." ) ); }
+    var paymo = this.paymo;
 
-
-                                paymo   .get("tasklists", "where=project_id=" + project[0].id )
-                                        .then( function( d ) {
-
-                                            var tasklist = d.tasklists.filter( function( tasklist ) { return tasklist.name.toLowerCase() === task.tasklist.toLowerCase(); });
-                                            if ( tasklist.length > 1 ) { done( new Error("Error: Tasklist Name \"" + task.tasklist + "\" did not select a unique tasklist." ) ); }
-                                            if ( tasklist.length < 1 ) { done( new Error("Error: Tasklist \"" + task.tasklist + "\" doesn't exist." ) ); }
-
-                                            done( null, tasklist[0] );
-
-                                        })
-                                        .catch( done );
-
-                            })
-                            .catch( done );
-
-                }
+    async.parallel({
+            users: function( done ) {
+                paymo   .get( "users" )
+                        .then( function( d ) { done( null, d.users.filter( function( user ) { return task.users.indexOf( user.name ) !== -1 || task.users.indexOf( user.email ) !== -1; } ) ); } )
+                        .catch( done );
             },
-            function( e, results ) {
+            data: function( done ) {
+                paymo   .get( "projects" )
+                        .then( function( d ) {
 
-                if ( e ) { throw e; }
+                            var project = d.projects.filter( function ( project ) { return project.name.toLowerCase() === task.project.toLowerCase() || project.code === task.project_name; } );
+                            if ( project.length > 1 ) { done( new Error("Error: Project Name \"" + task.project + "\" did not select a unique project." ) ); }
+                            if ( project.length < 1 ) { done( new Error("Error: Project \"" + task.project + "\" doesn't exist." ) ); }
 
-                paymo.post('tasks', {
-                    "name": task.name,
-                    "description": task.description,
-                    "tasklist_id": results.tasklist.id,
-                    "users": results.users.map( function( user ) { return user.id; })
-                })
-                .then( function( d ) {
-                    console.log( d );
-                })
-                .catch( function( e ) {
-                    console.error( e );
-                });
+
+                            paymo   .get("tasklists", "where=project_id=" + project[0].id )
+                                    .then( function( d ) {
+
+                                        var tasklist = d.tasklists.filter( function( tasklist ) { return tasklist.name.toLowerCase() === task.tasklist.toLowerCase(); });
+                                        if ( tasklist.length > 1 ) { done( new Error("Error: Tasklist Name \"" + task.tasklist + "\" did not select a unique tasklist." ) ); }
+                                        if ( tasklist.length < 1 ) { done( new Error("Error: Tasklist \"" + task.tasklist + "\" doesn't exist." ) ); }
+
+                                        done( null, {project: project[0], tasklist: tasklist[0] });
+
+                                    })
+                                    .catch( done );
+
+                        })
+                        .catch( done );
 
             }
-        );
+        },
+        function( e, results ) {
 
-    };
+            if ( e ) { throw e; }
 
+            paymo.post('tasks', {
+                "name": buildParametricTaskValues( task.name )( results.data.project, results.data.tasklist, results.data.users ),
+                "description": buildParametricTaskValues( task.description )( results.data.project, results.data.tasklist, results.data.users ),
+                "tasklist_id": results.data.tasklist.id,
+                "users": results.users.map( function( user ) { return user.id; })
+            })
+            .then( function( d ) {
+                callback( null, d );
+            })
+            .catch( function( e ) {
+                callback( e );
+            });
 
-
+        }
+    );
 
 };
+
+/**
+ * This routine schedules a specific task update job based on the schedule associated with each task.
+ *
+ * @param task a task object as specified in the tasks.js list
+ * @param callback a function consuming (err, result) containing the next step of computation.
+ *
+ */
+Scheduler.prototype.scheduleTask = function( task, callback ) {
+
+    if ( typeof callback !== "function" ) { callback = function( e ) { if (e) { console.error(e); } }; }
+
+    var self = this;
+
+    scheduler.scheduleJob( cronRuleFromSchedule( task.schedule ), function() {
+        self.postTask( task, callback );
+    });
+};
+
+
+
+module.exports = Scheduler;
