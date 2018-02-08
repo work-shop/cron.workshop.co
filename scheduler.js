@@ -123,8 +123,11 @@ Scheduler.prototype.scheduleTask = function( task, callback ) {
     if ( typeof callback !== "function" ) { callback = function( e ) { if (e) { console.error(e); } }; }
 
     var self = this;
+    var cronRule = cronRuleFromSchedule( task.schedule );
 
-    scheduler.scheduleJob( cronRuleFromSchedule( task.schedule ), function() {
+    console.log( "Scheduler: scheduling \"" + task.name + "\" with rule: \"" + cronRule + "\"" );
+
+    scheduler.scheduleJob( cronRule, function() {
         self.postTask( task, callback );
     });
 };

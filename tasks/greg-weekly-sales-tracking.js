@@ -19,8 +19,8 @@ module.exports = {
     // Scheduling and Management
     active: true,
     schedule: {
-        second: "*0",// 0 - 59, * = every
-        minute: "0", // 0 - 59
+        second: "0",
+        minute: "30", // 0 - 59
         hour: "4",// 0 - 23
         dayOfMonth: "*", // 1 - 31
         month: "*",// 1 - 31

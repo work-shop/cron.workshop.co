@@ -19,7 +19,7 @@ module.exports = {
      users: ["Nic Schumann"],
 
      // Scheduling and Management
-     active: true,
+     active: false,
      schedule: {
          second: "*/30",// 0 - 59, * = every
          minute: "*", // 0 - 59
