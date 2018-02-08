@@ -27,6 +27,7 @@
     "base-64": "^0.1.0",
     "email": "^0.2.6",
     "node-schedule": "^1.3.0",
+    "request": "^2.83.0",
     "request-promise": "^4.2.2"
   },
   "paymo_url": "https://app.paymoapp.com/api/"
