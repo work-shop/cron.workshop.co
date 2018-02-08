@@ -2,7 +2,7 @@
   "name": "cron.workshop.co",
   "version": "1.0.0",
   "description": "A small tool for scheduling and processing actions to and from Work-Shop's Paymo instance.",
-  "main": "index.js",
+  "main": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

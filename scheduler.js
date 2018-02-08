@@ -27,7 +27,7 @@ function cronRuleFromSchedule( schedule ) {
  * string containing the name or description, respectively.
  */
 function buildParametricTaskValues( taskfield, project, tasklist, users ) {
-    return ( typeof taskfield === "function" ) ? taskfield( project, tasklist, users ) : function() { return taskfield; };
+    return ( typeof taskfield === "function" ) ? taskfield : function() { return taskfield; };
 }
 
 
@@ -88,11 +88,14 @@ Scheduler.prototype.postTask = function( task, callback ) {
         },
         function( e, results ) {
 
-            if ( e ) { throw e; }
+            if ( e ) { callback( e ); }
+
+            var name = buildParametricTaskValues( task.name )( results.data.project, results.data.tasklist, results.data.users );
+            var description = buildParametricTaskValues( task.description )( results.data.project, results.data.tasklist, results.data.users );
 
             paymo.post('tasks', {
-                "name": buildParametricTaskValues( task.name )( results.data.project, results.data.tasklist, results.data.users ),
-                "description": buildParametricTaskValues( task.description )( results.data.project, results.data.tasklist, results.data.users ),
+                "name": name,
+                "description": description,
                 "tasklist_id": results.data.tasklist.id,
                 "users": results.users.map( function( user ) { return user.id; })
             })
