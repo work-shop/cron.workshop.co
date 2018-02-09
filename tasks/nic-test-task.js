@@ -12,8 +12,8 @@ var called = 1;
 
 module.exports = {
      // Content
-     name: "Test Task from Node",
-     description: function() { var m = "This task has been posted " + called + " times"; called += 1; return m; },
+     name: function() { var m = "Cron has been running for " + called + ((called > 1) ? " days." : " day."); called += 1; return m; },
+     description: "(this task was added by our cron.)",
      project: ".Internal",
      tasklist: "Nic",
      users: ["Nic Schumann"],
@@ -21,9 +21,9 @@ module.exports = {
      // Scheduling and Management
      active: false,
      schedule: {
-         second: "*/30",// 0 - 59, * = every
-         minute: "*", // 0 - 59
-         hour: "*",// 0 - 23
+         second: "0",// 0 - 59, * = every
+         minute: "30", // 0 - 59
+         hour: "4",// 0 - 23
          dayOfMonth: "*", // 1 - 31
          month: "*",// 1 - 31
          dayOfWeek: "*" // [0...7], where both 0 and 7 are sunday.

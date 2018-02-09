@@ -10,7 +10,7 @@
  */
 module.exports = {
     // Content
-    name: "Update Sales Tracking Spreadsheet",
+    name: "Update Company Website",
     description: "(this task was added by our cron.)",
     project: ".Internal",
     tasklist: "Greg",

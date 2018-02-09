@@ -10,7 +10,7 @@
  */
 module.exports = {
     // Content
-    name: "Update Sales Tracking Spreadsheet",
+    name: "Update Company Website",
     description: "(this task was added by our cron.)",
     project: ".Internal",
     tasklist: "Greg",
@@ -22,8 +22,8 @@ module.exports = {
         second: "0",
         minute: "30", // 0 - 59
         hour: "4",// 0 - 23
-        dayOfMonth: "*", // 1 - 31
+        dayOfMonth: "1", // 1 - 31
         month: "*",// 1 - 31
-        dayOfWeek: "1" // [0...7], where both 0 and 7 are sunday.
+        dayOfWeek: "*" // [0...7], where both 0 and 7 are sunday.
     }
 };
