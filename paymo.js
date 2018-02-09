@@ -3,7 +3,7 @@
 var request = require("request-promise");
 var base64 = require("base-64");
 
-var validPaymoTypes = ["bookings", "clientcontacts", "clients", "comments", "company", "discussions", "estimatetemplates", "timeentries", "users", "projects", "tasklists", "tasks"];
+var validPaymoTypes = ["bookings", "clientcontacts", "clients", "comments", "company", "discussions", "estimatetemplates", "entries", "users", "projects", "tasklists", "tasks"];
 
 function Paymo( key, config ) {
     if (!(this instanceof Paymo)) { return new Paymo( key, config ); }
