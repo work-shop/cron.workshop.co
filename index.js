@@ -38,6 +38,10 @@ reporter.runHistogram( report.histograms[0], function( e, histogram ){
 
     if ( e ) { console.error(e.message); }
 
+<<<<<<< d354e639ac93cb39f36bb5ca86a0cedb510fcc63
     console.log( require('util').inspect( histogram, { depth: 4, colors: true }));
+=======
+    console.log( histogram );
+>>>>>>> [Reporter] Implemented multi-tiered histogram sorting of results.
 
 });

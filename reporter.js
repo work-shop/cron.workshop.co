@@ -145,12 +145,21 @@ Reporter.prototype.getIdentifiedObjects = function( type, selector, ids, object_
                         var result = objects[ type ];
 
                         self.cache.set( key, result );
+<<<<<<< d354e639ac93cb39f36bb5ca86a0cedb510fcc63
 
                         callback( null, select_objects( object_names, result ) );
 
                     })
                     .catch( callback );
 
+=======
+
+                        callback( null, select_objects( object_names, result ) );
+
+                    })
+                    .catch( callback );
+
+>>>>>>> [Reporter] Implemented multi-tiered histogram sorting of results.
     }
 
 
@@ -222,6 +231,75 @@ Reporter.prototype.runAggregation = function( aggregation_rule, callback ) {
 
     });
 };
+
+function build_domain_selector_from( selector, i ) {
+    if ( i === 0 ) {
+        return function( segment ) { return segment.range.map( selector ); };
+    } else {
+        return function( segment ) { return segment.range.map( build_domain_selector_from( selector, i - 1 ) ); };
+    }
+}
+
+
+function partition_entries( selector, entries ) {
+    var map = {};
+
+    entries.forEach( function( entry ) {
+
+        var key = "" + selector( entry );
+
+        if ( typeof map[ key ] === "undefined" ) {
+
+            map[ key ] = [ entry ];
+
+        } else {
+
+            map[ key ].push( entry );
+
+        }
+    });
+
+    return map;
+
+}
+
+function build_sequential_partition( selectors, entries ) {
+    if ( typeof selectors[0] === "undefined" ) {
+
+        return entries;
+
+    } else {
+
+        var partition = partition_entries( selectors[0], entries );
+        var tail = selectors.slice( 1 );
+
+        for ( var classification in partition ) {
+            if ( partition.hasOwnProperty( classification ) ) {
+                partition[ classification ] = build_sequential_partition( tail, partition[ classification ] );
+            }
+        }
+
+        return partition;
+
+    }
+}
+
+/**
+ * Given a histogram rule, build the appropriate domain and run the histogram, returning
+ * an array containing a series of object mapping a histogram domain element to the corresponding histogram range element.
+ */
+Reporter.prototype.runHistogram = function( histogram_rule, callback ) {
+    this.getDomain( histogram_rule, function( e, entries ) {
+        if ( e ) { callback( e ); }
+
+        console.log( build_sequential_partition( histogram_rule.domain_selectors, entries ) );
+
+    });
+};
+
+
+
+
 
 
 /**
