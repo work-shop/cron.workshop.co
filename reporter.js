@@ -253,25 +253,49 @@ function partition_entries( selector, entries ) {
 
 }
 
-function build_sequential_partition( selectors, entries ) {
+
+function build_histogram_map( range_selector, aggregation, selectors, entries ) {
     if ( typeof selectors[0] === "undefined" ) {
 
-        return entries;
+        return { total: aggregation( entries.map( range_selector ) ), items: {} };
 
     } else {
 
+        var histogram = { items: {}, total: 0};
         var partition = partition_entries( selectors[0], entries );
         var tail = selectors.slice( 1 );
 
-        for ( var classification in partition ) {
-            if ( partition.hasOwnProperty( classification ) ) {
-                partition[ classification ] = build_sequential_partition( tail, partition[ classification ] );
+        for ( var c1 in partition ) {
+            if ( partition.hasOwnProperty( c1 ) ) {
+                histogram.items[ c1 ] = build_histogram_map( range_selector, aggregation, tail, partition[ c1 ] );
             }
         }
 
-        return partition;
+        for ( var c2 in histogram.items ) {
+            if ( histogram.items.hasOwnProperty( c2 ) ) {
+                histogram.total += histogram.items[ c2 ].total;
+            }
+        }
+
+        return histogram;
 
     }
+}
+
+
+function build_histogram_set( range_selector, aggregation, selectors, entries ) {
+
+
+
+    return entries.map( function( entry ) {
+        var row = {};
+
+        selectors.forEach( function( ) {
+
+        });
+
+
+    });
 }
 
 /**
@@ -282,7 +306,12 @@ Reporter.prototype.runHistogram = function( histogram_rule, callback ) {
     this.getDomain( histogram_rule, function( e, entries ) {
         if ( e ) { callback( e ); }
 
-        console.log( build_sequential_partition( histogram_rule.domain_selectors, entries ) );
+        console.log( build_histogram_map(
+            histogram_rule.range_selector,
+            histogram_rule.aggregation,
+            histogram_rule.domain_selectors,
+            entries
+        ) );
 
     });
 };
