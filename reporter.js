@@ -257,7 +257,7 @@ function partition_entries( selector, entries ) {
 function build_histogram_map( range_selector, aggregation, selectors, entries ) {
     if ( typeof selectors[0] === "undefined" ) {
 
-        return { total: aggregation( entries.map( range_selector ) ), items: {} };
+        return { total: aggregation( entries.map( range_selector ) ), items: {}, entries: entries };
 
     } else {
 
@@ -306,7 +306,7 @@ Reporter.prototype.runHistogram = function( histogram_rule, callback ) {
     this.getDomain( histogram_rule, function( e, entries ) {
         if ( e ) { callback( e ); }
 
-        console.log( build_histogram_map(
+        callback( null, build_histogram_map(
             histogram_rule.range_selector,
             histogram_rule.aggregation,
             histogram_rule.domain_selectors,

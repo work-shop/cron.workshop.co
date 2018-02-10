@@ -38,6 +38,6 @@ reporter.runHistogram( report.histograms[0], function( e, histogram ){
 
     if ( e ) { console.error(e.message); }
 
-    console.log( histogram );
+    console.log( require('util').inspect( histogram, { depth: 4, colors: true }));
 
 });
