@@ -34,10 +34,10 @@ var report = require('./reports.js');
 //
 // });
 
-reporter.runAggregation( report.aggregations[0], function( e, total ){
+reporter.runHistogram( report.histograms[0], function( e, histogram ){
 
     if ( e ) { console.error(e.message); }
 
-    console.log( total / 60 / 60 );
+    console.log( histogram );
 
 });

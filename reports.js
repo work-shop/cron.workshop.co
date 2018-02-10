@@ -1,8 +1,11 @@
 "use strict";
 
 var moment = require('moment');
-var total_project_hours = function( obj ) { return obj.duration; };
-var sum = function( data ) { return data.reduce( function( a,b ) { return a + b; }, 0); };
+
+var project = function( entry ) { return entry.project.name; };
+var task = function( entry ) { return entry.task.name; };
+var duration = function( entry ) { return entry.duration; };
+var sum = function( values ) { return values.reduce( function( a,b ) { return a + b; }, 0); };
 
 
 
@@ -17,16 +20,20 @@ module.exports = {
     aggregations: [
         {
             users: ["Nic Schumann"],
-            selector: total_project_hours,
+            selector: duration,
+            aggregation: sum,
             from: moment().day(0),
-            to: moment(),
-            aggregation: sum
+            to: moment()
         }
     ],
     histograms: [
         {
             users: ["Nic Schumann"],
-
+            domain_selectors: [project, task],
+            range_selector: duration,
+            aggregation: sum,
+            from: moment().day(0),
+            to: moment()
         }
     ],
     timeseries: [],

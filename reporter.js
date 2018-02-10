@@ -3,47 +3,78 @@
 var union = require('array-union');
 var async = require('async');
 var scheduler = require('node-schedule');
+var FastMap = require('collections/fast-map');
+
+
 var Paymo = require('./paymo.js');
 
 
+/**
+ * This helper generates a 'where in' string for a given
+ * paymo filter selector and set of IDs for that selector.
+ */
 function where_in_specified( selector, ids ) {
     return "where=" + selector + " in (" + ids.join(",") + ")";
 }
 
-
-function user_name_in( names ) {
-    return names.map( function( user ){ return "name=\"" + user + "\""; }).join(" or ");
+/**
+ * This helper generates a special selector for reducing the set of entries by
+ * a given set of user and task ids, which have been computed from the domain.
+ * It further restricts a range to a given time slice specified in the aggregation rule.
+ *
+ */
+function entries_selector( user_ids, task_ids, from, to ) {
+    return "where=user_id in (" + user_ids.join(",") + ") and task_id in (" + task_ids.join(",") + " ) and time_interval in (" + ["\""+from.format()+"\"", "\""+to.format()+"\""].join(",") + ")&include=project.name,task.name,task.tasklist.name";
 }
 
+/**
+ * `select_objects` is a generic helper which, given a set of names and a set of objects with a .name,
+ * reduced the set of objects to the set matching those names.
+ */
 function select_objects( names, objects ) {
     return ( names.length > 0 ) ? objects.filter( function( object ) { return names.indexOf( object.name ) !== -1; }) : objects;
 }
 
+/**
+ * This helper us used to build a domain of projects to select a
+ * set of tasklists from. It does so by merging the set of requested
+ * projects with the active projects for the specified users.
+ */
 function merge_projects_and_users( projects, users ) {
     var project_domain = users.reduce( function(a,b) { return a.concat( b.assigned_projects ); }, []);
     return projects.filter( function( project ) { return project_domain.indexOf( project.id ) !== -1; }).map( function( project ) { return project.id; });
 }
 
+/**
+ * For a given API request string, construct a unique cache-key,
+ * to be used in caching a result locally for future use.
+ *
+ */
+function cache_key( type, where ) {
+    return [type, "?", where].join("");
+}
 
 
 /**
- *
- *
+ * Constructor for the reporter class. This class manages aggregating and generating
+ * datasructures that feed report templates.
  */
 function Reporter( key, config ) {
     if ( !(this instanceof Reporter)) { return new Reporter(); }
     var self = this;
 
     self.paymo = new Paymo( key, config );
-    self.cache = {};
+    self.cache = new FastMap();
 
 }
 
 
-Reporter.prototype.runReport = function( template ) {
-
-};
-
+/**
+ * For a given aggregation, histogram, or time-series, this routine
+ * constructs that rule's domain, which is defined as the set of
+ * time entries matching its specified criteria.
+ *
+ */
 Reporter.prototype.getDomain = function( parameters, callback ) {
 
     var self = this;
@@ -74,8 +105,6 @@ Reporter.prototype.getDomain = function( parameters, callback ) {
 
                     self.getEntries( user_domain, task_domain, parameters.from, parameters.to, function( e, data ) {
 
-                        console.log( data.entries.filter( function( e ) { return user_domain.indexOf( e.user_id ) === -1; }));
-
                         callback( e, data.entries );
 
                     });
@@ -86,39 +115,104 @@ Reporter.prototype.getDomain = function( parameters, callback ) {
     });
 };
 
-
+/**
+ * This routine requests a set of objects in some type from the paymo API, filtered by a
+ * specified selector and set of ids for that selector, and further filtered by a discrete
+ * set of labels that the objects must have. Used to produce tasklists and tasks for a given set of
+ * projects and tasklists, respectively.
+ *
+ */
 Reporter.prototype.getIdentifiedObjects = function( type, selector, ids, object_names, callback ) {
     if ( typeof object_names === "undefined" ) { object_names = []; }
 
-    var where = where_in_specified( selector, ids );
+    var self = this;
 
-    this.paymo  .get( type, where )
-                .then( function( objects ) {  callback( null, select_objects( object_names, objects[ type ] )); })
-                .catch( callback );
+    var where = where_in_specified( selector, ids );
+    var key = cache_key( type, where );
+
+    var cached = self.cache.get( key );
+
+    if ( typeof cached !== "undefined" ) {
+
+        callback( null, select_objects( object_names, cached ) );
+
+    } else {
+
+        self.paymo  .get( type, where )
+                    .then( function( objects ) {
+
+                        var result = objects[ type ];
+
+                        self.cache.set( key, result );
+
+                        callback( null, select_objects( object_names, result ) );
+
+                    })
+                    .catch( callback );
+
+    }
+
 
 };
 
-
+/**
+ * This routine pulls a set of objects of some type from the Paymo api, filtered by
+ * some set of labels that the requested objects must have. Used to produce a set of
+ * users and projects.
+ *
+ */
 Reporter.prototype.getObjects = function( type, object_names, callback ) {
     if ( typeof object_names === "undefined" ) { object_names = []; }
 
-    this.paymo  .get( type )
-                .then( function( objects ) { callback( null, select_objects( object_names, objects[ type ] ) ); })
-                .catch( callback );
+    var self = this;
+
+    var key = cache_key( type, "" );
+    var cached = self.cache.get( key );
+
+    if ( typeof cached !== "undefined" ) {
+
+        callback( null, select_objects( object_names, cached ) );
+
+    } else {
+
+        this.paymo  .get( type )
+                    .then( function( objects ) {
+
+                        var result = objects[ type ];
+
+                        self.cache.set( key, result );
+
+                        callback( null, select_objects( object_names, result ) );
+
+                    })
+                    .catch( callback );
+
+    }
+
+
 };
 
+/**
+ * Given a domain of user_ids, task_ids, and a time slice, this routine requests
+ * the set of time entries matching this criterion from the paymo API. used to
+ * produce the final set of entries matching the aggregation, histogram, or time-timeseries
+ * selectors from the API.
+ *
+ */
 Reporter.prototype.getEntries = function( user_ids, task_ids, from, to, callback ) {
 
-    console.log( from.format() );
-    console.log( to.format() );
-
-    this.paymo  .get( "entries", "where=user_id in (" + user_ids.join(",") + ") and task_id in (" + task_ids.join(",") + " ) and time_interval in (" + ["\""+from.format()+"\"", "\""+to.format()+"\""].join(",") + ")"  )
+    this.paymo  .get( "entries", entries_selector( user_ids, task_ids, from, to ) )
                 .then( function( entries ) { callback( null, entries ); })
                 .catch( callback );
 
 };
 
-
+/**
+ * Given an aggregation rule, build the appropriate domain, and run the aggregation, producing
+ * the corresponding aggregated datapoint.
+ *
+ * @return number
+ */
 Reporter.prototype.runAggregation = function( aggregation_rule, callback ) {
     this.getDomain( aggregation_rule, function( e, entries ) {
         if ( e ) { callback( e ); }
@@ -127,6 +221,75 @@ Reporter.prototype.runAggregation = function( aggregation_rule, callback ) {
 
     });
 };
+
+function build_domain_selector_from( selector, i ) {
+    if ( i === 0 ) {
+        return function( segment ) { return segment.range.map( selector ); };
+    } else {
+        return function( segment ) { return segment.range.map( build_domain_selector_from( selector, i - 1 ) ); };
+    }
+}
+
+
+function partition_entries( selector, entries ) {
+    var map = {};
+
+    entries.forEach( function( entry ) {
+
+        var key = "" + selector( entry );
+
+        if ( typeof map[ key ] === "undefined" ) {
+
+            map[ key ] = [ entry ];
+
+        } else {
+
+            map[ key ].push( entry );
+
+        }
+    });
+
+    return map;
+
+}
+
+function build_sequential_partition( selectors, entries ) {
+    if ( typeof selectors[0] === "undefined" ) {
+
+        return entries;
+
+    } else {
+
+        var partition = partition_entries( selectors[0], entries );
+        var tail = selectors.slice( 1 );
+
+        for ( var classification in partition ) {
+            if ( partition.hasOwnProperty( classification ) ) {
+                partition[ classification ] = build_sequential_partition( tail, partition[ classification ] );
+            }
+        }
+
+        return partition;
+
+    }
+}
+
+/**
+ * Given a histogram rule, build the appropriate domain and run the histogram, returning
+ * an array containing a series of object mapping a histogram domain element to the corresponding histogram range element.
+ */
+Reporter.prototype.runHistogram = function( histogram_rule, callback ) {
+    this.getDomain( histogram_rule, function( e, entries ) {
+        if ( e ) { callback( e ); }
+
+        console.log( build_sequential_partition( histogram_rule.domain_selectors, entries ) );
+
+    });
+};
+
+
+
+
 
 
 
