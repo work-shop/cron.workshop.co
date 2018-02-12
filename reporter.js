@@ -232,15 +232,12 @@ Reporter.prototype.runAggregation = function( aggregation_rule, callback ) {
     });
 };
 
-function build_domain_selector_from( selector, i ) {
-    if ( i === 0 ) {
-        return function( segment ) { return segment.range.map( selector ); };
-    } else {
-        return function( segment ) { return segment.range.map( build_domain_selector_from( selector, i - 1 ) ); };
-    }
-}
 
-
+/**
+ * For a given selector and set of entries, partition the set of entries
+ * into a map indexed by the values of selector function on each entry.
+ *
+ */
 function partition_entries( selector, entries ) {
     var map = {};
 
@@ -263,7 +260,11 @@ function partition_entries( selector, entries ) {
 
 }
 
-
+/**
+ * Given a set of entries, a range selector, an agregation rule, and a set of domain selectors
+ * build a map of categories into aggregated quantities to use to build up a histogram.
+ *
+ */
 function build_histogram_map( range_selector, aggregation, selectors, entries ) {
     if ( typeof selectors[0] === "undefined" ) {
 
@@ -290,22 +291,6 @@ function build_histogram_map( range_selector, aggregation, selectors, entries ) 
         return histogram;
 
     }
-}
-
-
-function build_histogram_set( range_selector, aggregation, selectors, entries ) {
-
-
-
-    return entries.map( function( entry ) {
-        var row = {};
-
-        selectors.forEach( function( ) {
-
-        });
-
-
-    });
 }
 
 /**
