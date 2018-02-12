@@ -13,8 +13,8 @@ module.exports = {
     name: "Manage Paymo",
     description: "",
     project: ".Internal",
-    tasklist: "Greg",
-    users: ["Greg Nemes"],
+    tasklist: "Nic",
+    users: ["Nic Schumann"],
 
     // Scheduling and Management
     active: true,
