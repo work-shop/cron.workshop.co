@@ -22,7 +22,7 @@ module.exports = {
         second: "0",
         minute: "30", // 0 - 59
         hour: "4",// 0 - 23
-        dayOfMonth: "*", // 1 - 31
+        dayOfMonth: "5", // 1 - 31
         month: "*",// 1 - 31
         dayOfWeek: "*" // [0...7], where both 0 and 7 are sunday.
     }
