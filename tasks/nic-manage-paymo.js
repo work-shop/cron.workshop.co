@@ -20,7 +20,7 @@ module.exports = {
     active: true,
     schedule: {
         second: "0",
-        minute: "45", // 0 - 59
+        minute: "52", // 0 - 59
         hour: "12",// 0 - 23
         dayOfMonth: "*", // 1 - 31
         month: "*",// 1 - 31
