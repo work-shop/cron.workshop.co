@@ -15,6 +15,7 @@ module.exports = {
     project: ".Internal",
     tasklist: "Greg",
     users: ["Greg Nemes"],
+    assigner: "Nic Schumann",
 
     // Scheduling and Management
     active: true,

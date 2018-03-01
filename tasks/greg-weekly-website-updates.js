@@ -10,8 +10,8 @@
  */
 module.exports = {
     // Content
-    name: "Manage Paymo",
-    description: "",
+    name: "Update Company Website",
+    description: "(this task was added by our cron.)",
     project: ".Internal",
     tasklist: "Greg",
     users: ["Greg Nemes"],
@@ -21,10 +21,10 @@ module.exports = {
     active: true,
     schedule: {
         second: "0",
-        minute: "0", // 0 - 59
-        hour: "14",// 0 - 23
+        minute: "30", // 0 - 59
+        hour: "4",// 0 - 23
         dayOfMonth: "*", // 1 - 31
         month: "*",// 1 - 31
-        dayOfWeek: "1-5" // [0...7], where both 0 and 7 are sunday.
+        dayOfWeek: "1" // [0...7], where both 0 and 7 are sunday.
     }
 };
