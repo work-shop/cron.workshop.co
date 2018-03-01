@@ -8,7 +8,7 @@ var config = require("./package.json");
 var loaddir = require("./load-directory-contents.js");
 
 var Scheduler = require("./scheduler.js");
-var scheduler = new Scheduler( env.key, config );
+var scheduler = new Scheduler( env, config );
 
 
 /**

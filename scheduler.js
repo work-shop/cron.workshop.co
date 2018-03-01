@@ -33,11 +33,11 @@ function buildParametricTaskValues( taskfield, project, tasklist, users ) {
 
 
 
-function Scheduler( key, config ) {
-    if ( !(this instanceof Scheduler)) { return new Scheduler(); }
+function Scheduler( keys, config ) {
+    if ( !(this instanceof Scheduler)) { return new Scheduler( keys, config ); }
     var self = this;
 
-    self.paymo = new Paymo( key, config );
+    self.paymo = new Paymo( keys, config );
 
 }
 
@@ -56,12 +56,12 @@ Scheduler.prototype.postTask = function( task, callback ) {
 
     async.parallel({
             users: function( done ) {
-                paymo   .get( "users" )
+                paymo   .get( task.assigner, "users" )
                         .then( function( d ) { done( null, d.users.filter( function( user ) { return task.users.indexOf( user.name ) !== -1 || task.users.indexOf( user.email ) !== -1; } ) ); } )
                         .catch( done );
             },
             data: function( done ) {
-                paymo   .get( "projects" )
+                paymo   .get( task.assigner, "projects" )
                         .then( function( d ) {
 
                             var project = d.projects.filter( function ( project ) { return project.name.toLowerCase() === task.project.toLowerCase() || project.code === task.project_name; } );
@@ -69,7 +69,7 @@ Scheduler.prototype.postTask = function( task, callback ) {
                             if ( project.length < 1 ) { done( new Error("Error: Project \"" + task.project + "\" doesn't exist." ) ); }
 
 
-                            paymo   .get("tasklists", "where=project_id=" + project[0].id )
+                            paymo   .get(task.assigner, "tasklists", "where=project_id=" + project[0].id )
                                     .then( function( d ) {
 
                                         var tasklist = d.tasklists.filter( function( tasklist ) { return tasklist.name.toLowerCase() === task.tasklist.toLowerCase(); });
@@ -93,7 +93,7 @@ Scheduler.prototype.postTask = function( task, callback ) {
             var name = buildParametricTaskValues( task.name )( results.data.project, results.data.tasklist, results.data.users );
             var description = buildParametricTaskValues( task.description )( results.data.project, results.data.tasklist, results.data.users );
 
-            paymo.post('tasks', {
+            paymo.post( task.assigner, 'tasks', {
                 "name": name,
                 "description": description,
                 "tasklist_id": results.data.tasklist.id,

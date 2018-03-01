@@ -40,6 +40,13 @@ module.exports = {
       */
      users: ["Nic Schumann"],
 
+     /**
+      * A single user name representing the assigning user.
+      * This **must** be defined, or the application won't be
+      * able to obtain an API key with which to authenticate.
+      */
+     assigner: "Greg Nemes"
+
      // Task Scheduling and Management Goes here:
      /**
       * If you longer want to schedule this task, but want
