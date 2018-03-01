@@ -97,7 +97,8 @@ Scheduler.prototype.postTask = function( task, callback ) {
                 "name": name,
                 "description": description,
                 "tasklist_id": results.data.tasklist.id,
-                "users": results.users.map( function( user ) { return user.id; })
+                "users": results.users.map( function( user ) { return user.id; }),
+                "notify_emails": true
             })
             .then( function( d ) {
                 callback( null, d );
