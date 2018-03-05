@@ -18,7 +18,7 @@ module.exports = {
     assigner: "Nic Schumann",
 
     // Scheduling and Management
-    active: true,
+    active: false,
     schedule: {
         second: "0",
         minute: "30", // 0 - 59
